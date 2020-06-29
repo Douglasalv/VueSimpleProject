@@ -1,7 +1,7 @@
 <template>
   <div>
-    <Titulo text="Aluno" />
-    <div>
+    <Titulo :text="professorId != undefined ? 'Professor: ' + professor.nome : 'Todos os Alunos'" />
+    <div v-if="professorId != undefined">
       <input type="text" placeholder="Nome do Aluno" v-model="nome" v-on:keyup.enter="addAluno()" />
       <button class="btn btn-input" v-on:click="addAluno()">Adicionar</button>
     </div>
@@ -37,20 +37,34 @@ export default {
   data() {
     return {
       titulo: "Aluno",
+      professorId: this.$route.params.prof_id,
+      professor: {},
       nome: "",
       alunos: []
     };
   },
   created() {
-    this.$http
-      .get("http://localhost:3000/alunos")
-      .then(res => res.json())
-      .then(alunos => (this.alunos = alunos));
+    if (this.professorId) {
+      this.carregarProfessores();
+      this.$http
+        .get("http://localhost:3000/alunos?professor.id=" + this.professorId)
+        .then(res => res.json())
+        .then(alunos => (this.alunos = alunos));
+    } else {
+      this.$http
+        .get("http://localhost:3000/alunos")
+        .then(res => res.json())
+        .then(alunos => (this.alunos = alunos));
+    }
   },
   methods: {
     addAluno() {
       let _aluno = {
-        nome: this.nome
+        nome: this.nome,
+        professor: {
+          id: this.professor.id,
+          nome: this.professor.nome
+        }
       };
       this.$http
         .post("http://localhost:3000/alunos", _aluno)
@@ -66,6 +80,15 @@ export default {
         let _indice = this.alunos.indexOf(aluno);
         this.alunos.splice(_indice, 1);
       });
+    },
+
+    carregarProfessores() {
+      this.$http
+        .get("http://localhost:3000/professores/" + this.professorId)
+        .then(res => res.json())
+        .then(professores => {
+          this.professor = professores;
+        });
     }
   }
 };
@@ -74,6 +97,7 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 input {
+  width: calc(100% - 200px);
   border: 0px;
   margin: 0px;
   padding: 20px;
@@ -82,6 +106,7 @@ input {
 }
 
 .btn-input {
+  width: 160px;
   border: 0px;
   margin: 0px;
   padding: 20px;
